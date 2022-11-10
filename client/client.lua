@@ -58,7 +58,6 @@ function lockpickFinish(success)
     if success then
 		QRCore.Functions.Notify('lockpick successful', 'success')
 		Citizen.InvokeNative(0x6BAB9442830C7F53, 2058564250, 0)
-		TriggerServerEvent('police:server:policeAlert', 'Rhodes Bank is being robbed')
 		lockpicked = true
     else
         QRCore.Functions.Notify('lockpick unsuccessful', 'error')
@@ -94,7 +93,7 @@ end)
 RegisterNetEvent('rsg-rhodesbankheist:client:boom')
 AddEventHandler('rsg-rhodesbankheist:client:boom', function()
 	if cooldownSecondsRemaining == 0 then
-		local hasItem = QRCore.Functions.HasItem('lockpick', 1)
+		local hasItem = QRCore.Functions.HasItem('dynamite', 1)
 		if hasItem then
 			TriggerServerEvent('rsg-rhodesbankheist:server:removeItem', 'dynamite', 1)
 			local playerPed = PlayerPedId()
@@ -113,7 +112,7 @@ AddEventHandler('rsg-rhodesbankheist:client:boom', function()
 			Citizen.InvokeNative(0x6BAB9442830C7F53, 3483244267, 0)
 			TriggerEvent('rsg-rhodesbankheist:client:policenpc')
 			local alertcoords = GetEntityCoords(PlayerPedId())
-			-- add your police alert here
+			TriggerServerEvent('police:server:policeAlert', 'Rhodes Bank is being robbed')
 			handleCooldown()
 		else
 			QRCore.Functions.Notify('you need dynamite to do that', 'error')
