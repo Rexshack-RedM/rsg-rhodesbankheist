@@ -5,6 +5,9 @@ local lockpicked = false
 local dynamiteused = false
 local vault1 = false
 local vault2 = false
+local CurrentLawmen = 0
+
+------------------------------------------------------------------------------------------------------------------------
 
 -- lock vault doors
 Citizen.CreateThread(function()
@@ -28,13 +31,20 @@ Citizen.CreateThread(function()
 				awayFromObject = false
 				DrawText3Ds(objectPos.x, objectPos.y, objectPos.z + 1.0, "Lockpick [J]")
 				if IsControlJustReleased(0, QRCore.Shared.Keybinds['J']) then
-					local hasItem = QRCore.Functions.HasItem('lockpick', 1)
-					if hasItem then
-						TriggerServerEvent('rsg-rhodesbankheist:server:removeItem', 'lockpick', 1)
-						TriggerEvent('qr-lockpick:client:openLockpick', lockpickFinish)
-					else
-						QRCore.Functions.Notify('you need a lockpick', 'error')
-					end
+					QRCore.Functions.TriggerCallback('police:GetCops', function(result)
+						CurrentLawmen = result
+						if CurrentLawmen >= Config.MinimumLawmen then
+							local hasItem = QRCore.Functions.HasItem('lockpick', 1)
+							if hasItem then
+								TriggerServerEvent('rsg-rhodesbankheist:server:removeItem', 'lockpick', 1)
+								TriggerEvent('qr-lockpick:client:openLockpick', lockpickFinish)
+							else
+								QRCore.Functions.Notify('you need a lockpick', 'error')
+							end
+						else
+							QRCore.Functions.Notify('not enough lawmen on duty!', 'error')
+						end
+					end)
 				end
 			end
 		end
@@ -48,6 +58,7 @@ function lockpickFinish(success)
     if success then
 		QRCore.Functions.Notify('lockpick successful', 'success')
 		Citizen.InvokeNative(0x6BAB9442830C7F53, 2058564250, 0)
+		TriggerServerEvent('police:server:policeAlert', 'Rhodes Bank is being robbed')
 		lockpicked = true
     else
         QRCore.Functions.Notify('lockpick unsuccessful', 'error')

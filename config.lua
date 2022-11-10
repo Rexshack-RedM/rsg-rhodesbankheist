@@ -1,5 +1,8 @@
 Config = {}
 
+-- settings
+Config.MinimumLawmen = 1 -- amount of lawman needed for heist
+
 -- lock bank doors
 Config.VaultDoors = {
 	1634148892, -- gate locked (no access)
