@@ -1,11 +1,13 @@
 local QRCore = exports['qr-core']:GetCoreObject()
-local initialCooldownSeconds = 3600 -- cooldown time in seconds
+local lockdownSecondsRemaining = 0 -- done to zero lockdown on restart
 local cooldownSecondsRemaining = 0 -- done to zero cooldown on restart
+local CurrentLawmen = 0
 local lockpicked = false
 local dynamiteused = false
 local vault1 = false
 local vault2 = false
-local CurrentLawmen = 0
+local robberystarted = false
+local lockdownactive = false
 
 ------------------------------------------------------------------------------------------------------------------------
 
@@ -25,7 +27,7 @@ Citizen.CreateThread(function()
 		Wait(0)
 		local pos, awayFromObject = GetEntityCoords(PlayerPedId()), true
 		local object = Citizen.InvokeNative(0xF7424890E4A094C0, 2058564250, 0)
-		if object ~= 0 and cooldownSecondsRemaining == 0 and lockpicked == false then
+		if object ~= 0 and lockdownSecondsRemaining == 0 and lockpicked == false then
 			local objectPos = GetEntityCoords(object)
 			if #(pos - objectPos) < 3.0 then
 				awayFromObject = false
@@ -59,6 +61,9 @@ function lockpickFinish(success)
 		QRCore.Functions.Notify('lockpick successful', 'success')
 		Citizen.InvokeNative(0x6BAB9442830C7F53, 2058564250, 0)
 		lockpicked = true
+		robberystarted = true
+		handleLockdown()
+		lockdownactive = true
     else
         QRCore.Functions.Notify('lockpick unsuccessful', 'error')
     end
@@ -66,20 +71,19 @@ end
 
 ------------------------------------------------------------------------------------------------------------------------
 
--- vault prompt
+-- blow vault prompt
 Citizen.CreateThread(function()
 	while true do
 		Wait(0)
 		local pos, awayFromObject = GetEntityCoords(PlayerPedId()), true
 		local object = Citizen.InvokeNative(0xF7424890E4A094C0, 3483244267, 0)
-		if object ~= 0 and cooldownSecondsRemaining == 0 and dynamiteused == false then
+		if object ~= 0 and robberystarted == true and dynamiteused == false then
 			local objectPos = GetEntityCoords(object)
 			if #(pos - objectPos) < 3.0 then
 				awayFromObject = false
 				DrawText3Ds(objectPos.x, objectPos.y, objectPos.z + 1.0, "Place Dynamite [J]")
 				if IsControlJustReleased(0, QRCore.Shared.Keybinds['J']) then
 					TriggerEvent('rsg-rhodesbankheist:client:boom')
-					dynamiteused = true
 				end
 			end
 		end
@@ -92,9 +96,10 @@ end)
 -- blow vault doors
 RegisterNetEvent('rsg-rhodesbankheist:client:boom')
 AddEventHandler('rsg-rhodesbankheist:client:boom', function()
-	if cooldownSecondsRemaining == 0 then
+	if robberystarted == true then
 		local hasItem = QRCore.Functions.HasItem('dynamite', 1)
 		if hasItem then
+			dynamiteused = true
 			TriggerServerEvent('rsg-rhodesbankheist:server:removeItem', 'dynamite', 1)
 			local playerPed = PlayerPedId()
 			TaskStartScenarioInPlace(playerPed, GetHashKey('WORLD_HUMAN_CROUCH_INSPECT'), 5000, true, false, false, false)
@@ -105,7 +110,7 @@ AddEventHandler('rsg-rhodesbankheist:client:boom', function()
 			SetEntityHeading(prop, GetEntityHeading(PlayerPedId()))
 			PlaceObjectOnGroundProperly(prop)
 			FreezeEntityPosition(prop,true)
-			QRCore.Functions.Notify('explosives set, stand well back', 10000, 'primary')
+			QRCore.Functions.Notify('explosives set, stand well back', 'primary')
 			Wait(10000)
 			AddExplosion(1282.2947, -1308.442, 77.03968, 25 , 5000.0 ,true , false , 27)
 			DeleteObject(prop)
@@ -113,7 +118,6 @@ AddEventHandler('rsg-rhodesbankheist:client:boom', function()
 			TriggerEvent('rsg-rhodesbankheist:client:policenpc')
 			local alertcoords = GetEntityCoords(PlayerPedId())
 			TriggerServerEvent('police:server:policeAlert', 'Rhodes Bank is being robbed')
-			handleCooldown()
 		else
 			QRCore.Functions.Notify('you need dynamite to do that', 'error')
 		end
@@ -136,7 +140,7 @@ end)
 RegisterNetEvent('rsg-rhodesbankheist:client:checkvault1', function()
 	local player = PlayerPedId()
 	SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
-	if vault1 == false then
+	if robberystarted == true and vault1 == false then
 			local animDict = "script_ca@cachr@ig@ig4_vaultloot"
 			local anim = "ig13_14_grab_money_front01_player_zero"
 			RequestAnimDict(animDict)
@@ -150,7 +154,7 @@ RegisterNetEvent('rsg-rhodesbankheist:client:checkvault1', function()
 			TriggerServerEvent('rsg-rhodesbankheist:server:reward')
 			vault1 = true
 	else
-		QRCore.Functions.Notify('already looted this vault', 'error')
+		QRCore.Functions.Notify('vault not lootable', 'error')
 	end
 end)
 
@@ -168,7 +172,7 @@ end)
 RegisterNetEvent('rsg-rhodesbankheist:client:checkvault2', function()
 	local player = PlayerPedId()
 	SetCurrentPedWeapon(player, `WEAPON_UNARMED`, true)
-	if vault2 == false then
+	if robberystarted == true and vault2 == false then
 			local animDict = "script_ca@cachr@ig@ig4_vaultloot"
 			local anim = "ig13_14_grab_money_front01_player_zero"
 			RequestAnimDict(animDict)
@@ -182,7 +186,7 @@ RegisterNetEvent('rsg-rhodesbankheist:client:checkvault2', function()
 			TriggerServerEvent('rsg-rhodesbankheist:server:reward')
 			vault2 = true
 	else
-		QRCore.Functions.Notify('already looted this vault', 'error')
+		QRCore.Functions.Notify('vault not lootable', 'error')
 	end
 end)
 
@@ -217,9 +221,45 @@ end)
 
 ------------------------------------------------------------------------------------------------------------------------
 
--- cooldown
+-- bank lockdown timer
+function handleLockdown()
+    lockdownSecondsRemaining = Config.BankLockdown
+    Citizen.CreateThread(function()
+        while lockdownSecondsRemaining > 0 do
+            Wait(1000)
+            lockdownSecondsRemaining = lockdownSecondsRemaining - 1
+        end
+    end)
+end
+
+-- bank lockdown and reset after cooldown
+Citizen.CreateThread(function()
+	while true do
+		Wait(1000)
+		if robberystarted == true and lockdownactive == true then
+			exports['qr-core']:DrawText('Bank Lockdown in '..lockdownSecondsRemaining..' seconds!', 'left')
+		end
+		if lockdownSecondsRemaining == 0 and robberystarted == true and lockdownactive == true then
+			-- lock doors
+			for k,v in pairs(Config.VaultDoors) do
+				Citizen.InvokeNative(0xD99229FE93B46286,v,1,1,0,0,0,0)
+				Citizen.InvokeNative(0x6BAB9442830C7F53,v,1)
+			end
+			-- disable vault looting / trigger cooldown
+			vault1 = true
+			vault2 = true
+			exports['qr-core']:HideText()
+			lockdownactive = false
+			handleCooldown()
+		end
+	end
+end)
+
+------------------------------------------------------------------------------------------------------------------------
+
+-- cooldown timer
 function handleCooldown()
-    cooldownSecondsRemaining = initialCooldownSeconds
+    cooldownSecondsRemaining = Config.BankCooldown
     Citizen.CreateThread(function()
         while cooldownSecondsRemaining > 0 do
             Wait(1000)
@@ -227,6 +267,26 @@ function handleCooldown()
         end
     end)
 end
+
+-- reset bank so it can be robbed again
+Citizen.CreateThread(function()
+	while true do
+		Wait(1000)
+		if lockdownactive == false and cooldownSecondsRemaining == 0 and robberystarted == true then
+			-- confirm doors are locked
+			for k,v in pairs(Config.VaultDoors) do
+				Citizen.InvokeNative(0xD99229FE93B46286,v,1,1,0,0,0,0)
+				Citizen.InvokeNative(0x6BAB9442830C7F53,v,1)
+			end
+			-- reset bank robbery
+			robberystarted = false
+			lockpicked = false
+			dynamiteused = false
+			vault1 = false
+			vault2 = false
+		end
+	end
+end)
 
 ------------------------------------------------------------------------------------------------------------------------
 
@@ -239,3 +299,6 @@ function DrawText3Ds(x, y, z, text)
     SetTextCentre(1)
     DisplayText(str,_x,_y)
 end
+
+------------------------------------------------------------------------------------------------------------------------
+
