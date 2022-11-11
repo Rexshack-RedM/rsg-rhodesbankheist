@@ -18,5 +18,7 @@ shared_scripts {
 }
 
 dependency 'qr-core'
+dependency 'qr-menu'
+dependency 'qr-lockpick'
 
 lua54 'yes'

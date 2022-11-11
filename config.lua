@@ -8,6 +8,7 @@ Config.BankCooldown = 3600 -- amount of time in seconds until bank can be robbed
 -- lock bank doors
 Config.VaultDoors = {
 	1634148892, -- gate locked (no access)
+	3142122679, -- backdoor locked (no access)
 	2058564250, -- corridor door (use lockpick)
 	3483244267, -- vault door (use dynamite)
 }

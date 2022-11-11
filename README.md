@@ -8,6 +8,8 @@
 
 # Dependancies
 - qr-core
+- qr-menu
+- qr-lockpick
 
 # Installation
 - ensure that the dependancies are added and started

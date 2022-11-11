@@ -302,3 +302,75 @@ end
 
 ------------------------------------------------------------------------------------------------------------------------
 
+Citizen.CreateThread(function()
+	exports['qr-core']:createPrompt('rhopolicelock', vector3(1295.91, -1304.38, 77.04), QRCore.Shared.Keybinds['J'], 'Emergency Menu', {
+		type = 'client',
+		event = 'rsg-rhodesbankheist:client:bankmenu',
+		args = {},
+	})
+end)
+
+-- emergency menu
+RegisterNetEvent('rsg-rhodesbankheist:client:bankmenu', function()
+    exports['qr-menu']:openMenu({
+        {
+            header = 'Emergency Menu',
+            isMenuHeader = true,
+        },
+        {
+            header = "Lock Bank",
+            txt = "used by law enforcement to lock bank in an emergency",
+			icon = "fas fa-lock",
+            params = {
+                event = 'rsg-rhodesbankheist:client:policelock',
+				isServer = false,
+            }
+        },
+        {
+            header = "Unlock Bank",
+            txt = "used by law enforcement to unlock bank in an emergency",
+			icon = "fas fa-lock-open",
+            params = {
+                event = 'rsg-rhodesbankheist:client:policeunlock',
+				isServer = false,
+            }
+        },
+        {
+            header = "Close Menu",
+            txt = '',
+            params = {
+                event = 'qr-menu:closeMenu',
+            }
+        },
+    })
+end)
+
+RegisterNetEvent('rsg-rhodesbankheist:client:policelock', function()
+    QRCore.Functions.GetPlayerData(function(PlayerData)
+        if PlayerData.job.name == "police" then
+			-- lock doors
+			for k,v in pairs(Config.VaultDoors) do
+				Citizen.InvokeNative(0x6BAB9442830C7F53,v,1)
+			end
+			QRCore.Functions.Notify('emergency doors locked', 'success')
+        else
+			QRCore.Functions.Notify('law enforcement only', 'error')
+		end
+    end)
+end)
+
+RegisterNetEvent('rsg-rhodesbankheist:client:policeunlock', function()
+    QRCore.Functions.GetPlayerData(function(PlayerData)
+        if PlayerData.job.name == "police" then
+			-- lock doors
+			for k,v in pairs(Config.VaultDoors) do
+				Citizen.InvokeNative(0x6BAB9442830C7F53,v,0)
+			end
+			QRCore.Functions.Notify('emergency doors unlocked', 'success')
+        else
+			QRCore.Functions.Notify('law enforcement only', 'error')
+		end
+    end)
+end)
+
+------------------------------------------------------------------------------------------------------------------------
