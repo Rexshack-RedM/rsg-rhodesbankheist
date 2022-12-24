@@ -1,4 +1,4 @@
-local QRCore = exports['qr-core']:GetCoreObject()
+local RSGCore = exports['rsg-core']:GetCoreObject()
 local lockdownSecondsRemaining = 0 -- done to zero lockdown on restart
 local cooldownSecondsRemaining = 0 -- done to zero cooldown on restart
 local CurrentLawmen = 0
@@ -32,19 +32,19 @@ Citizen.CreateThread(function()
 			if #(pos - objectPos) < 3.0 then
 				awayFromObject = false
 				DrawText3Ds(objectPos.x, objectPos.y, objectPos.z + 1.0, "Lockpick [J]")
-				if IsControlJustReleased(0, QRCore.Shared.Keybinds['J']) then
-					QRCore.Functions.TriggerCallback('police:GetCops', function(result)
+				if IsControlJustReleased(0, RSGCore.Shared.Keybinds['J']) then
+					RSGCore.Functions.TriggerCallback('police:GetCops', function(result)
 						CurrentLawmen = result
 						if CurrentLawmen >= Config.MinimumLawmen then
-							local hasItem = QRCore.Functions.HasItem('lockpick', 1)
+							local hasItem = RSGCore.Functions.HasItem('lockpick', 1)
 							if hasItem then
 								TriggerServerEvent('rsg-rhodesbankheist:server:removeItem', 'lockpick', 1)
-								TriggerEvent('qr-lockpick:client:openLockpick', lockpickFinish)
+								TriggerEvent('rsg-lockpick:client:openLockpick', lockpickFinish)
 							else
-								QRCore.Functions.Notify('you need a lockpick', 'error')
+								RSGCore.Functions.Notify('you need a lockpick', 'error')
 							end
 						else
-							QRCore.Functions.Notify('not enough lawmen on duty!', 'error')
+							RSGCore.Functions.Notify('not enough lawmen on duty!', 'error')
 						end
 					end)
 				end
@@ -58,14 +58,14 @@ end)
 
 function lockpickFinish(success)
     if success then
-		QRCore.Functions.Notify('lockpick successful', 'success')
+		RSGCore.Functions.Notify('lockpick successful', 'success')
 		Citizen.InvokeNative(0x6BAB9442830C7F53, 2058564250, 0)
 		lockpicked = true
 		robberystarted = true
 		handleLockdown()
 		lockdownactive = true
     else
-        QRCore.Functions.Notify('lockpick unsuccessful', 'error')
+        RSGCore.Functions.Notify('lockpick unsuccessful', 'error')
     end
 end
 
@@ -82,7 +82,7 @@ Citizen.CreateThread(function()
 			if #(pos - objectPos) < 3.0 then
 				awayFromObject = false
 				DrawText3Ds(objectPos.x, objectPos.y, objectPos.z + 1.0, "Place Dynamite [J]")
-				if IsControlJustReleased(0, QRCore.Shared.Keybinds['J']) then
+				if IsControlJustReleased(0, RSGCore.Shared.Keybinds['J']) then
 					TriggerEvent('rsg-rhodesbankheist:client:boom')
 				end
 			end
@@ -97,7 +97,7 @@ end)
 RegisterNetEvent('rsg-rhodesbankheist:client:boom')
 AddEventHandler('rsg-rhodesbankheist:client:boom', function()
 	if robberystarted == true then
-		local hasItem = QRCore.Functions.HasItem('dynamite', 1)
+		local hasItem = RSGCore.Functions.HasItem('dynamite', 1)
 		if hasItem then
 			dynamiteused = true
 			TriggerServerEvent('rsg-rhodesbankheist:server:removeItem', 'dynamite', 1)
@@ -110,7 +110,7 @@ AddEventHandler('rsg-rhodesbankheist:client:boom', function()
 			SetEntityHeading(prop, GetEntityHeading(PlayerPedId()))
 			PlaceObjectOnGroundProperly(prop)
 			FreezeEntityPosition(prop,true)
-			QRCore.Functions.Notify('explosives set, stand well back', 'primary')
+			RSGCore.Functions.Notify('explosives set, stand well back', 'primary')
 			Wait(10000)
 			AddExplosion(1282.2947, -1308.442, 77.03968, 25 , 5000.0 ,true , false , 27)
 			DeleteObject(prop)
@@ -119,17 +119,17 @@ AddEventHandler('rsg-rhodesbankheist:client:boom', function()
 			local alertcoords = GetEntityCoords(PlayerPedId())
 			TriggerServerEvent('police:server:policeAlert', 'Rhodes Bank is being robbed')
 		else
-			QRCore.Functions.Notify('you need dynamite to do that', 'error')
+			RSGCore.Functions.Notify('you need dynamite to do that', 'error')
 		end
 	else
-		QRCore.Functions.Notify('you can\'t do that right now', 'error')
+		RSGCore.Functions.Notify('you can\'t do that right now', 'error')
 	end
 end)
 
 ------------------------------------------------------------------------------------------------------------------------
 
 Citizen.CreateThread(function()
-	exports['qr-core']:createPrompt('vault1', vector3(1288.6381, -1313.991, 77.039779), 0xF3830D8E, 'Loot Vault', {
+	exports['rsg-core']:createPrompt('vault1', vector3(1288.6381, -1313.991, 77.039779), 0xF3830D8E, 'Loot Vault', {
 		type = 'client',
 		event = 'rsg-rhodesbankheist:client:checkvault1',
 		args = {},
@@ -154,14 +154,14 @@ RegisterNetEvent('rsg-rhodesbankheist:client:checkvault1', function()
 			TriggerServerEvent('rsg-rhodesbankheist:server:reward')
 			vault1 = true
 	else
-		QRCore.Functions.Notify('vault not lootable', 'error')
+		RSGCore.Functions.Notify('vault not lootable', 'error')
 	end
 end)
 
 ------------------------------------------------------------------------------------------------------------------------
 
 Citizen.CreateThread(function()
-	exports['qr-core']:createPrompt('vault2', vector3(1286.2711, -1315.305, 77.039764), 0xF3830D8E, 'Loot Vault', {
+	exports['rsg-core']:createPrompt('vault2', vector3(1286.2711, -1315.305, 77.039764), 0xF3830D8E, 'Loot Vault', {
 		type = 'client',
 		event = 'rsg-rhodesbankheist:client:checkvault2',
 		args = {},
@@ -186,7 +186,7 @@ RegisterNetEvent('rsg-rhodesbankheist:client:checkvault2', function()
 			TriggerServerEvent('rsg-rhodesbankheist:server:reward')
 			vault2 = true
 	else
-		QRCore.Functions.Notify('vault not lootable', 'error')
+		RSGCore.Functions.Notify('vault not lootable', 'error')
 	end
 end)
 
@@ -237,7 +237,7 @@ Citizen.CreateThread(function()
 	while true do
 		Wait(1000)
 		if robberystarted == true and lockdownactive == true then
-			exports['qr-core']:DrawText('Bank Lockdown in '..lockdownSecondsRemaining..' seconds!', 'left')
+			exports['rsg-core']:DrawText('Bank Lockdown in '..lockdownSecondsRemaining..' seconds!', 'left')
 		end
 		if lockdownSecondsRemaining == 0 and robberystarted == true and lockdownactive == true then
 			-- lock doors
@@ -248,7 +248,7 @@ Citizen.CreateThread(function()
 			-- disable vault looting / trigger cooldown
 			vault1 = true
 			vault2 = true
-			exports['qr-core']:HideText()
+			exports['rsg-core']:HideText()
 			lockdownactive = false
 			handleCooldown()
 		end
@@ -303,7 +303,7 @@ end
 ------------------------------------------------------------------------------------------------------------------------
 
 Citizen.CreateThread(function()
-	exports['qr-core']:createPrompt('rhopolicelock', vector3(1295.91, -1304.38, 77.04), QRCore.Shared.Keybinds['J'], 'Emergency Menu', {
+	exports['rsg-core']:createPrompt('rhopolicelock', vector3(1295.91, -1304.38, 77.04), RSGCore.Shared.Keybinds['J'], 'Emergency Menu', {
 		type = 'client',
 		event = 'rsg-rhodesbankheist:client:bankmenu',
 		args = {},
@@ -312,7 +312,7 @@ end)
 
 -- emergency menu
 RegisterNetEvent('rsg-rhodesbankheist:client:bankmenu', function()
-    exports['qr-menu']:openMenu({
+    exports['rsg-menu']:openMenu({
         {
             header = 'Emergency Menu',
             isMenuHeader = true,
@@ -339,36 +339,36 @@ RegisterNetEvent('rsg-rhodesbankheist:client:bankmenu', function()
             header = "Close Menu",
             txt = '',
             params = {
-                event = 'qr-menu:closeMenu',
+                event = 'rsg-menu:closeMenu',
             }
         },
     })
 end)
 
 RegisterNetEvent('rsg-rhodesbankheist:client:policelock', function()
-    QRCore.Functions.GetPlayerData(function(PlayerData)
+    RSGCore.Functions.GetPlayerData(function(PlayerData)
         if PlayerData.job.name == "police" then
 			-- lock doors
 			for k,v in pairs(Config.VaultDoors) do
 				Citizen.InvokeNative(0x6BAB9442830C7F53,v,1)
 			end
-			QRCore.Functions.Notify('emergency doors locked', 'success')
+			RSGCore.Functions.Notify('emergency doors locked', 'success')
         else
-			QRCore.Functions.Notify('law enforcement only', 'error')
+			RSGCore.Functions.Notify('law enforcement only', 'error')
 		end
     end)
 end)
 
 RegisterNetEvent('rsg-rhodesbankheist:client:policeunlock', function()
-    QRCore.Functions.GetPlayerData(function(PlayerData)
+    RSGCore.Functions.GetPlayerData(function(PlayerData)
         if PlayerData.job.name == "police" then
 			-- lock doors
 			for k,v in pairs(Config.VaultDoors) do
 				Citizen.InvokeNative(0x6BAB9442830C7F53,v,0)
 			end
-			QRCore.Functions.Notify('emergency doors unlocked', 'success')
+			RSGCore.Functions.Notify('emergency doors unlocked', 'success')
         else
-			QRCore.Functions.Notify('law enforcement only', 'error')
+			RSGCore.Functions.Notify('law enforcement only', 'error')
 		end
     end)
 end)

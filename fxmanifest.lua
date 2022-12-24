@@ -17,8 +17,8 @@ shared_scripts {
     'config.lua'
 }
 
-dependency 'qr-core'
-dependency 'qr-menu'
-dependency 'qr-lockpick'
+dependency 'rsg-core'
+dependency 'rsg-menu'
+dependency 'rsg-lockpick'
 
 lua54 'yes'
